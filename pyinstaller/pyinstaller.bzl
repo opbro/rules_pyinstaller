@@ -7,19 +7,18 @@ def _pyinstaller_build_impl(ctx):
     wheel_dependancy = depset(
         direct = ctx.files.deps,
     )
+    env = ctx.configuration.default_shell_env
+    user_path = env['PATH']
     if not ctx.attr.executable_name:
         executable_name = ctx.attr.name + ".exe"
     outfile = ctx.actions.declare_file(executable_name)
     main_file = ctx.file.main
-    print(main_file)
-    print(executable_name)
-    print(ctx.files.deps)
-
     args = ctx.actions.args()
     args.add_all(wheel_dependancy, format_each="--wheel=%s")
     args.add("--outfile", outfile.path)
     args.add("--main", main_file.path)
-    args.add("--pyinstallerpath", ctx.attr.pyinstaller_path)
+    args.add("--userpath", user_path)
+    args.add("--debuglevel", ctx.attr.debug_level)
     ctx.actions.run(
         inputs = depset(transitive = [wheel_dependancy, depset(direct=[main_file])]),
         outputs = [outfile],
@@ -53,7 +52,7 @@ pyinstaller_build = rule(
             allow_single_file = True,
         ),
         "executable_name": attr.string(default=""),
-        "pyinstaller_path": attr.string(default="C:\\Users\\kkubis\\AppData\\Local\\Programs\\Python\\Python37\\Scripts\\pyinstaller.exe"),
+        "debug_level": attr.string(default="WARN"),
         "_pyinstaller": attr.label(
             executable = True,
             cfg = "host",
